@@ -35,13 +35,13 @@ def home_page():
 # FUNCTIONS - 
 
 
-def get_city_data(data, text_column):
-    if text_column != "~ All Cities ~":
-        return data[data['City2'] == text_column]
+def get_city_data(data, tsa_column):
+    if tsa_column != "~ All Cities ~":
+        return data[data['City2'] == tsa_column]
     else:
         return data
 
-def plot_boxplots(df, text_column, box_col1, box_col2):
+def plot_boxplots(df, tsa_column, box_col1, box_col2):
     total_passengers = df.groupby([df.index]).agg({"Passenger_Trips" : "sum"})
     
     total_passengers['year'] = [d.year for d in total_passengers.index]
@@ -136,7 +136,7 @@ def airline_page():
     city_option = ["~ All Cities ~"]
     df_cities = list(data["City2"].unique())
     col_options = city_option + df_cities
-    text_column = col2.selectbox('Choose the city you want to explore', col_options, index = 0)
+    tsa_column = col2.selectbox('Choose the city you want to explore', col_options, index = 0)
     col2.write(" ")
     
     st.write("""
@@ -144,10 +144,10 @@ def airline_page():
              """)
     st.write(" ")
     # Get city data - 
-    temp = get_city_data(data, text_column)
+    temp = get_city_data(data, tsa_column)
     
     box_col1, box_col2 = st.beta_columns((1,1))
-    plot_boxplots(temp, text_column, box_col1, box_col2)
+    plot_boxplots(temp, tsa_column, box_col1, box_col2)
     st.write(" ")
     st.write("""
              Officiis eligendi itaque labore et dolorum mollitia officiis optio vero. Quisquam sunt adipisci omnis et ut. Nulla accusantium dolor incidunt officia tempore. Et eius omnis. Cupiditate ut dicta maxime officiis quidem quia. Sed et consectetur qui quia repellendus itaque neque. Aliquid amet quidem ut quaerat cupiditate. Ab et eum qui repellendus omnis culpa magni laudantium dolores.
@@ -158,9 +158,117 @@ def airline_page():
     get_forecast(temp, forecast_col2)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ USER PAGE
 
+def load_data(input_preference, col):
+    user_data = 2
+    try:
+        if input_preference == "Input from Computer":
+            uploaded_file = col.file_uploader('Upload your input CSV file', type = ['csv'])
+            if uploaded_file is not None:
+                input_df = pd.read_csv(uploaded_file)
+                user_data = 1
+        elif input_preference == "Use Example file":
+            input_df = pd.read_csv('dom_citypairs_web.csv')
+            user_data = 0
+        return input_df, user_data
+    except:
+        pass
+
 def user_page():
     st.title("User Basic Page")
-
+    st.write(" ")
+    st.write("""
+             Officiis eligendi itaque labore et dolorum mollitia officiis optio vero. Quisquam sunt adipisci omnis et ut. Nulla accusantium dolor incidunt officia tempore. Et eius omnis. Cupiditate ut dicta maxime officiis quidem quia. Sed et consectetur qui quia repellendus itaque neque. Aliquid amet quidem ut quaerat cupiditate. Ab et eum qui repellendus omnis culpa magni laudantium dolores.
+             """)
+    st.write("")
+    about_expander = st.beta_expander("About")
+    about_expander.write("""
+                         Officiis eligendi itaque labore et dolorum mollitia officiis optio vero. Quisquam sunt adipisci omnis et ut. Nulla accusantium dolor incidunt officia tempore. Et eius omnis. Cupiditate ut dicta maxime officiis quidem quia. Sed et consectetur qui quia repellendus itaque neque. Aliquid amet quidem ut quaerat cupiditate. Ab et eum qui repellendus omnis culpa magni laudantium dolores.
+                         """)
+    
+    st.write(" ")
+    st.write("""
+             ## Let's get started!
+             """)
+    st.write("""
+             Officiis eligendi itaque labore et dolorum mollitia officiis optio vero. Quisquam sunt adipisci omnis et ut. Nulla accusantium dolor incidunt officia tempore. Et eius omnis. Cupiditate ut dicta maxime officiis quidem quia. Sed et consectetur qui quia repellendus itaque neque. Aliquid amet quidem ut quaerat cupiditate. Ab et eum qui repellendus omnis culpa magni laudantium dolores.
+             """)
+    
+    st.sidebar.write('---')
+    # Select Box to ask for input - 
+    input_preference = st.sidebar.selectbox("Input file", ["~ Select ~", "Input from Computer", "Use Example file"])
+    
+    user_data = 2
+    if input_preference == "Input from Computer":
+        uploaded_file = st.sidebar.file_uploader('Upload your input CSV file', type = ['csv'])
+        if uploaded_file is not None:
+            input_df = pd.read_csv(uploaded_file)
+            user_data = 1
+    elif input_preference == "Use Example file":
+        input_df = pd.read_csv('dom_citypairs_web.csv')
+        user_data = 0
+        
+    if input_preference != "~ Select ~" and user_data != 2:
+        if input_df is not None:
+            
+            # Dividing screen into 3 parts to 
+            col1, col2, col3 = st.beta_columns((1,4,1))
+            col2.write("")
+            col2.write('Below we can see first 100 rows from the data.')
+            
+            col2.dataframe(input_df.iloc[0:100])
+            
+            # Ask for values column and data/time column - 
+            st.write(" ")
+            st.write("""
+                     Great, now let's move on to the next step.  
+                     Let's get the data into required format for time series analysis. In this application, we only take single column (think of word.)   
+                     Select the column that selects the time-series data which you want to explore.
+                     """)
+            
+            col1, col2, col3 = st.beta_columns((1,4,1))
+            
+            if user_data == 1:
+                col_options = ['~ Select a column ~']
+                df_columns = list(input_df.columns)
+                col_options = col_options + df_columns
+                tsa_column = col2.selectbox('Choose the column containing time-series data', col_options, index = 0)
+            elif user_data == 0:
+                tsa_column = col2.selectbox('Choose the column containing time-series data', ['Passenger_Trips'], index = 0)
+                col2. write("""
+                            ** We will be doing Time-Series Analysis on the 'Passenger_Trips' column.**
+                            """)
+            
+            if tsa_column != "~ Select a column ~":
+                st.write(" ")
+                st.write("""
+                         Now that we have selected the time_series data column, let's select the column containing our date-time info.  
+                         It's normal that sometimes, we have time information in a single column or in different columns.  
+                         """)
+                
+                col1, col2, col3 = st.beta_columns((1,4,1))
+                
+                if user_data == 1:
+                    time_col_pref = col2.selectbox('Time data is available in - ', ['~ Select ~', 'Single column', 'Multiple columns'], index = 0)
+                elif user_data == 0:
+                    time_col_pref = col2.selectbox('Time data is available in - ', ['Multiple columns'], index = 0)
+                    col2. write("""
+                                ** In the input file we have time data in different columns.**
+                                """)
+                if time_col_pref != "~ Select ~":
+                    col1, col2, col3 = st.beta_columns((1,4,1))
+                
+                
+                else:
+                    col2.info("Select an option to get time data")
+                
+            else:
+                col2.info("Select the column for Time Series Analysis")
+            
+            
+            
+    else:
+        st.info('Awaiting input file. (Use Input file select box in the sidebar to input a file)')
+    
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~ MAIN PAGE
 
 # Setting the page layout -
